@@ -53,7 +53,7 @@
                         </div>
                         <div>
                             <label class="block text-sm text-gray-500 mb-1">Distance (m)</label>
-                            <input type="number" id="distance" class="极屹皮2 rounded">
+                            <input type="number" id="distance" class="w-full p-2 border rounded">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm text-gray-500 mb-1">Capture Time</label>
@@ -68,7 +68,7 @@
                 <div id="image-preview-container" class="hidden mb-6">
                     <div class="relative bg-gray-100 rounded-lg overflow-hidden">
                         <img id="image-preview" class="w-full max-h-96 object-contain" 
-                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels" src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/465d85f4-ce91-4c9e-ad24-65b0d9b1e685.png">
+                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels" src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/6160aed9-595a-48d2-a96e-4e4dbca84fc0.png">
                         <div class="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 to-transparent">
                             <div class="flex justify-between items-center">
                                 <span class="text-white font-medium">Image Preview</span>
@@ -261,7 +261,8 @@
 
                 // Simulate API call delay
                 setTimeout(() => {
-                    // Generate random values (simulated analysis)
+                    try {
+                        // Generate random values (simulated analysis)
                     // Determine location type from image name/contents
                     const locationTypes = [
                         { name: 'heavy', values: [50,120,88] },
@@ -307,9 +308,14 @@
                     imagePreviewContainer.classList.add('hidden');
                     resultsContainer.classList.remove('hidden');
 
-                    // Reset button and add share button
-                    analyzeBtn.disabled = false;
-                    analyzeBtn.textContent = 'Analyze Air Quality';
+                    } catch (error) {
+                        console.error('Analysis error:', error);
+                        alert('Analysis failed. Please try again.');
+                    } finally {
+                        // Reset button regardless of success/failure
+                        analyzeBtn.disabled = false;
+                        analyzeBtn.textContent = 'Analyze Air Quality';
+                    }
                     
                     // Add share button dynamically
                     const shareBtn = `<button id="share-results" class="mt-4 w-full py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
@@ -333,7 +339,12 @@
                     pm1: document.getElementById('pm1-value').textContent,
                     pm25: document.getElementById('pm25-value').textContent,
                     pm10: document.getElementById('pm10-value').textContent,
-                    location: document.getElementById('detected-location').textContent
+                    location: document.getElementById('detected-location').textContent,
+                    temperature: document.getElementById('temperature').value,
+                    pressure: document.getElementById('pressure').value,
+                    windSpeed: document.getElementById('wind-speed').value,
+                    distance: document.getElementById('distance').value,
+                    timestamp: document.getElementById('capture-time').value || new Date().toISOString()
                 };
                 
                 try {
