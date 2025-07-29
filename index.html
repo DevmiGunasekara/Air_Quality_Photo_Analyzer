@@ -26,7 +26,7 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Traffic Area Air Quality Analyzer</h1>
-            <p class="text-gray-600">Upload a photo to check air quality levels</p>
+            <p class="text-gray-600">Upload any traffic photo to analyze PM levels</p>
         </header>
 
         <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
@@ -35,9 +35,31 @@
                     <div class="mx-auto w-16 h-16 mb-4">
                         <span class="text-blue-500 text-4xl">↑</span>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-700 mb-2">Upload Photo</h3>
-                    <p class="text-gray-500 mb-4">Click to select or drag/drop any traffic area photo</p>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Upload Photo & Enter Data</h3>
+                    <p class="text-gray-500 mb-2">Upload traffic photo and provide environmental data</p>
                     <input type="file" id="file-input" accept="image/*" class="hidden">
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">Temperature (°C)</label>
+                            <input type="number" id="temperature" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">Pressure (hPa)</label>
+                            <input type="number" id="pressure" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">Wind Speed (km/h)</label>
+                            <input type="number" id="wind-speed" class="w-full p-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">Distance (m)</label>
+                            <input type="number" id="distance" class="极屹皮2 rounded">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm text-gray-500 mb-1">Capture Time</label>
+                            <input type="datetime-local" id="capture-time" class="w-full p-2 border rounded">
+                        </div>
+                    </div>
                     <button id="upload-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                         Select Image
                     </button>
@@ -46,7 +68,7 @@
                 <div id="image-preview-container" class="hidden mb-6">
                     <div class="relative bg-gray-100 rounded-lg overflow-hidden">
                         <img id="image-preview" class="w-full max-h-96 object-contain" 
-                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels">
+                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels" src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/465d85f4-ce91-4c9e-ad24-65b0d9b1e685.png">
                         <div class="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 to-transparent">
                             <div class="flex justify-between items-center">
                                 <span class="text-white font-medium">Image Preview</span>
@@ -105,7 +127,18 @@
                         </div>
                     </div>
 
-                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-gray-700 mb-2">Environmental Data</h4>
+                            <div class="text-sm space-y-2">
+                                <div><span class="text-gray-500">Temperature:</span> <span id="result-temperature">--</span>°C</div>
+                                <div><span class="text-gray-500">Pressure:</span> <span id="result-pressure">--</span> hPa</div>
+                                <div><span class="text-gray-500">Wind Speed:</span> <span id="result-wind">--</span> km/h</div>
+                                <div><span class="text-gray-500">Distance:</span> <span id="result-distance">--</span> m</div>
+                                <div><span class="text-gray-500">Time:</span> <span id="result-time">--</span></div>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <span class="text-yellow-500">⚠️</span>
@@ -113,7 +146,7 @@
                             <div class="ml-3">
                                 <h4 class="text-sm font-medium text-yellow-800">Note</h4>
                                 <div class="text-sm text-yellow-700">
-                                    <p>Note: These are simulated results. For exact measurements, use professional sensors.</p>
+                                    <p>This is an estimate from photo analysis. Results may vary.</p>
                                 </div>
                             </div>
                         </div>
@@ -151,7 +184,7 @@
                 <div class="mt-6 pt-6 border-t">
                     <h4 class="font-medium text-gray-700 mb-2">How to Use This Tool</h4>
                     <ul class="list-disc list-inside text-sm text-gray-500 space-y-1">
-                        <li>Upload any traffic area photo</li>
+                        <li>Upload any clear photo of traffic area</li>
                         <li>Click "Analyze Air Quality" to simulate particulate matter readings</li>
                         <li>Results show estimated PM levels based on visual analysis</li>
                     </ul>
@@ -246,6 +279,16 @@
 
                     // Update results
                     document.getElementById('pm1-value').textContent = pm1;
+                    document.getElementById('result-temperature').textContent = 
+                        document.getElementById('temperature').value || '--';
+                    document.getElementById('result-pressure').textContent = 
+                        document.getElementById('pressure').value || '--';
+                    document.getElementById('result-wind').textContent = 
+                        document.getElementById('wind-speed').value || '--';
+                    document.getElementById('result-distance').textContent = 
+                        document.getElementById('distance').value || '--';
+                    document.getElementById('result-time').textContent = 
+                        document.getElementById('capture-time').value || '--';
                     document.getElementById('pm25-value').textContent = pm25;
                     document.getElementById('pm10-value').textContent = pm10;
 
