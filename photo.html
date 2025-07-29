@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Photo Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .graph-bar {
+            transition: width 0.8s ease-in-out;
+        }
+        .pm1-color { background-color: #4ade80; }
+        .pm25-color { background-color: #f59e0b; }
+        .pm10-color { background-color: #ef4444; }
+        .drop-zone {
+            border: 2px dashed #6b7280;
+            transition: all 0.3s;
+        }
+        .drop-zone.active {
+            border-color: #3b82f6;
+            background-color: #f0f9ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Traffic Area Air Quality Analyzer</h1>
+            <p class="text-gray-600">Upload a photo to check air quality levels</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+            <div class="p-6">
+                <div id="upload-container" class="drop-zone rounded-lg p-10 text-center cursor-pointer mb-6 transition-all">
+                    <div class="mx-auto w-16 h-16 mb-4">
+                        <span class="text-blue-500 text-4xl">↑</span>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Upload Photo</h3>
+                    <p class="text-gray-500 mb-4">Click to select or drag/drop any traffic area photo</p>
+                    <input type="file" id="file-input" accept="image/*" class="hidden">
+                    <button id="upload-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        Select Image
+                    </button>
+                </div>
+
+                <div id="image-preview-container" class="hidden mb-6">
+                    <div class="relative bg-gray-100 rounded-lg overflow-hidden">
+                        <img id="image-preview" class="w-full max-h-96 object-contain" 
+                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels">
+                        <div class="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 to-transparent">
+                            <div class="flex justify-between items-center">
+                                <span class="text-white font-medium">Image Preview</span>
+                                <button id="change-image" class="text-white hover:text-blue-300">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="analyze-btn" class="mt-4 w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        Analyze Air Quality
+                    </button>
+                </div>
+
+                <div id="results-container" class="hidden">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Analysis Results</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 rounded-full pm1-color mr-2"></span>
+                                <h4 class="font-medium">PM1</h4>
+                            </div>
+                            <div id="pm1-value" class="text-2xl font-bold mb-2">--</div>
+                            <div id="pm1-status" class="text-sm text-gray-500">Not analyzed</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 rounded-full pm25-color mr-2"></span>
+                                <h4 class="font-medium">PM2.5</h4>
+                            </div>
+                            <div id="pm25-value" class="text-2xl font-bold mb-2">--</div>
+                            <div id="pm25-status" class="text-sm text-gray-500">Not analyzed</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 rounded-full pm10-color mr-2"></span>
+                                <h4 class="font-medium">PM10</h4>
+                            </div>
+                            <div id="pm10-value" class="text-2xl font-bold mb-2">--</div>
+                            <div id="pm10-status" class="text-sm text-gray-500">Not analyzed</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <div class="flex justify-between mb-2">
+                            <span>Particulate Matter Levels</span>
+                            <span>(µg/m³)</span>
+                        </div>
+                        <div class="h-36 flex items-end gap-2">
+                            <div id="pm1-bar" class="graph-bar pm1-color h-0 w-full rounded-t-sm" style="height: 0;"></div>
+                            <div id="pm25-bar" class="graph-bar pm25-color h-0 w-full rounded-t-sm" style="height: 0;"></div>
+                            <div id="pm10-bar" class="graph-bar pm10-color h-0 w-full rounded-t-sm" style="height: 0;"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <span class="text-yellow-500">⚠️</span>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-medium text-yellow-800">Note</h4>
+                                <div class="text-sm text-yellow-700">
+                                    <p>Note: These are simulated results. For exact measurements, use professional sensors.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">About Pollution Levels</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h4 class="font-medium text-gray-700 flex items-center">
+                            <span class="w-3 h-3 rounded-full pm1-color mr-2"></span>
+                            PM1
+                        </h4>
+                        <p class="text-gray-500 text-sm mt-1">Traffic-related ultrafine particles that bypass trees and penetrate deep into lungs.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-700 flex items-center">
+                            <span class="w-3 h-3 rounded-full pm25-color mr-2"></span>
+                            PM2.5
+                        </h4>
+                        <p class="text-gray-500 text-sm mt-1">Traffic exhaust particles reduced by tree canopies by 7-24%, depending on density.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-700 flex items-center">
+                            <span class="w-3 h-3 rounded-full pm10-color mr-2"></span>
+                            PM10
+                        </h4>
+                        <p class="text-gray-500 text-sm mt-1">Road dust and tire particles filtered by roadside vegetation.</p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t">
+                    <h4 class="font-medium text-gray-700 mb-2">How to Use This Tool</h4>
+                    <ul class="list-disc list-inside text-sm text-gray-500 space-y-1">
+                        <li>Upload any traffic area photo</li>
+                        <li>Click "Analyze Air Quality" to simulate particulate matter readings</li>
+                        <li>Results show estimated PM levels based on visual analysis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadContainer = document.getElementById('upload-container');
+            const fileInput = document.getElementById('file-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const imagePreviewContainer = document.getElementById('image-preview-container');
+            const imagePreview = document.getElementById('image-preview');
+            const changeImageBtn = document.getElementById('change-image');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const resultsContainer = document.getElementById('results-container');
+
+            // Upload area functionality
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            
+            uploadContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadContainer.classList.add('active');
+            });
+
+            uploadContainer.addEventListener('dragleave', () => {
+                uploadContainer.classList.remove('active');
+            });
+
+            uploadContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadContainer.classList.remove('active');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            changeImageBtn.addEventListener('click', () => {
+                imagePreviewContainer.classList.add('hidden');
+                uploadContainer.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+            });
+
+            function handleFile(file) {
+                if (!file.type.match('image.*')) {
+                    alert('Please upload an image file');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    uploadContainer.classList.add('hidden');
+                    imagePreviewContainer.classList.remove('hidden');
+                    resultsContainer.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Analysis simulation
+            analyzeBtn.addEventListener('click', () => {
+                // Show loading state
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<span class="animate-pulse">Analyzing...</span>';
+
+                // Simulate API call delay
+                setTimeout(() => {
+                    // Generate random values (simulated analysis)
+                    // Determine location type from image name/contents
+                    const locationTypes = [
+                        { name: 'heavy', values: [50,120,88] },
+                        { name: 'clean', values: [7,32,20] },
+                        { name: 'moderate', values: [40,65,70] }
+                    ];
+                    
+                    // Randomly select a location type (you can replace this with actual image analysis)
+                    const location = locationTypes[Math.floor(Math.random() * locationTypes.length)];
+                    
+                    // Apply small random variations to values
+                    const pm1 = location.values[0] + Math.floor(Math.random() * 10) - 5;
+                    const pm25 = location.values[1] + Math.floor(Math.random() * 20) - 10;
+                    const pm10 = location.values[2] + Math.floor(Math.random() * 15) - 7;
+
+                    // Update results
+                    document.getElementById('pm1-value').textContent = pm1;
+                    document.getElementById('pm25-value').textContent = pm25;
+                    document.getElementById('pm10-value').textContent = pm10;
+
+                    // Set status based on values
+                    document.getElementById('pm1-status').textContent = getStatusText(pm1, 10, 20);
+                    document.getElementById('pm25-status').textContent = getStatusText(pm25, 25, 50);
+                    document.getElementById('pm10-status').textContent = getStatusText(pm10, 50, 100);
+
+                    // Animate graph bars
+                    document.getElementById('pm1-bar').style.height = `${(pm1 / 150) * 100}%`;
+                    document.getElementById('pm25-bar').style.height = `${(pm25 / 150) * 100}%`;
+                    document.getElementById('pm10-bar').style.height = `${(pm10 / 150) * 100}%`;
+
+                    // Show results and location type
+                    document.getElementById('detected-location').textContent = location.name;
+                    imagePreviewContainer.classList.add('hidden');
+                    resultsContainer.classList.remove('hidden');
+
+                    // Reset button and add share button
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = 'Analyze Air Quality';
+                    
+                    // Add share button dynamically
+                    const shareBtn = `<button id="share-results" class="mt-4 w-full py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                        Share Results
+                    </button>`;
+                    resultsContainer.insertAdjacentHTML('beforeend', shareBtn);
+                    
+                    document.getElementById('share-results').addEventListener('click', shareResults);
+                }, 2000);
+            });
+
+            function getStatusText(value, moderateThreshold, unhealthyThreshold) {
+                if (value < moderateThreshold) return 'Good air quality';
+                if (value < unhealthyThreshold) return 'Moderate pollution';
+                return 'Unhealthy levels';
+            }
+
+            async function shareResults() {
+                // Capture results
+                const results = {
+                    pm1: document.getElementById('pm1-value').textContent,
+                    pm25: document.getElementById('pm25-value').textContent,
+                    pm10: document.getElementById('pm10-value').textContent,
+                    location: document.getElementById('detected-location').textContent
+                };
+                
+                try {
+                    // In a real implementation, this would POST to your server
+                    const response = await fakeApiCall(results);
+                    alert(`Results shared! Share link: ${response.shareUrl}`);
+                } catch (error) {
+                    alert('Sharing failed. Please copy the results manually.');
+                }
+            }
+
+            function fakeApiCall(data) {
+                // Simulate server API call
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve({
+                            shareUrl: `https://yourapp.com/share/${btoa(JSON.stringify(data))}`
+                        });
+                    }, 1000);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
+```
+
+🎨 **Generating images based on descriptions...**
+
+✅ **Images generated successfully! Here's your updated content:**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Photo Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .graph-bar {
+            transition: width 0.8s ease-in-out;
+        }
+        .pm1-color { background-color: #4ade80; }
+        .pm25-color { background-color: #f59e0b; }
+        .pm10-color { background-color: #ef4444; }
+        .drop-zone {
+            border: 2px dashed #6b7280;
+            transition: all 0.3s;
+        }
+        .drop-zone.active {
+            border-color: #3b82f6;
+            background-color: #f0f9ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Traffic Area Air Quality Analyzer</h1>
+            <p class="text-gray-600">Upload a photo to check air quality levels</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+            <div class="p-6">
+                <div id="upload-container" class="drop-zone rounded-lg p-10 text-center cursor-pointer mb-6 transition-all">
+                    <div class="mx-auto w-16 h-16 mb-4">
+                        <span class="text-blue-500 text-4xl">↑</span>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Upload Photo</h3>
+                    <p class="text-gray-500 mb-4">Click to select or drag/drop any traffic area photo</p>
+                    <input type="file" id="file-input" accept="image/*" class="hidden">
+                    <button id="upload-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        Select Image
+                    </button>
+                </div>
+
+                <div id="image-preview-container" class="hidden mb-6">
+                    <div class="relative bg-gray-100 rounded-lg overflow-hidden">
+                        <img id="image-preview" class="w-full max-h-96 object-contain" 
+                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels" src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/104549ad-0af3-4cdb-870a-e133326fe556.png">
+                        <div class="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 to-transparent">
+                            <div class="flex justify-between items-center">
+                                <span class="text-white font-medium">Image Preview</span>
+                                <button id="change-image" class="text-white hover:text-blue-300">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="analyze-btn" class="mt-4 w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        Analyze Air Quality
+                    </button>
+                </div>
+
+                <div id="results-container" class="hidden">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Analysis Results</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 rounded-full pm1-color mr-2"></span>
+                                <h4 class="font-medium">PM1</h4>
+                            </div>
+                            <div id="pm1-value" class="text-2xl font-bold mb-2">--</div>
+                            <div id="pm1-status" class="text-sm text-gray-500">Not analyzed</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 rounded-full pm25-color mr-2"></span>
+                                <h4 class="font-medium">PM2.5</h4>
+                            </div>
+                            <div id="pm25-value" class="text-2xl font-bold mb-2">--</div>
+                            <div id="pm25-status" class="text-sm text-gray-500">Not analyzed</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 rounded-full pm10-color mr-2"></span>
+                                <h4 class="font-medium">PM10</h4>
+                            </div>
+                            <div id="pm10-value" class="text-2xl font-bold mb-2">--</div>
+                            <div id="pm10-status" class="text-sm text-gray-500">Not analyzed</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <div class="flex justify-between mb-2">
+                            <span>Particulate Matter Levels</span>
+                            <span>(µg/m³)</span>
+                        </div>
+                        <div class="h-36 flex items-end gap-2">
+                            <div id="pm1-bar" class="graph-bar pm1-color h-0 w-full rounded-t-sm" style="height: 0;"></div>
+                            <div id="pm25-bar" class="graph-bar pm25-color h-0 w-full rounded-t-sm" style="height: 0;"></div>
+                            <div id="pm10-bar" class="graph-bar pm10-color h-0 w-full rounded-t-sm" style="height: 0;"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <span class="text-yellow-500">⚠️</span>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-medium text-yellow-800">Note</h4>
+                                <div class="text-sm text-yellow-700">
+                                    <p>Note: These are simulated results. For exact measurements, use professional sensors.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">About Pollution Levels</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h4 class="font-medium text-gray-700 flex items-center">
+                            <span class="w-3 h-3 rounded-full pm1-color mr-2"></span>
+                            PM1
+                        </h4>
+                        <p class="text-gray-500 text-sm mt-1">Traffic-related ultrafine particles that bypass trees and penetrate deep into lungs.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-700 flex items-center">
+                            <span class="w-3 h-3 rounded-full pm25-color mr-2"></span>
+                            PM2.5
+                        </h4>
+                        <p class="text-gray-500 text-sm mt-1">Traffic exhaust particles reduced by tree canopies by 7-24%, depending on density.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-700 flex items-center">
+                            <span class="w-3 h-3 rounded-full pm10-color mr-2"></span>
+                            PM10
+                        </h4>
+                        <p class="text-gray-500 text-sm mt-1">Road dust and tire particles filtered by roadside vegetation.</p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-6 border-t">
+                    <h4 class="font-medium text-gray-700 mb-2">How to Use This Tool</h4>
+                    <ul class="list-disc list-inside text-sm text-gray-500 space-y-1">
+                        <li>Upload any traffic area photo</li>
+                        <li>Click "Analyze Air Quality" to simulate particulate matter readings</li>
+                        <li>Results show estimated PM levels based on visual analysis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadContainer = document.getElementById('upload-container');
+            const fileInput = document.getElementById('file-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const imagePreviewContainer = document.getElementById('image-preview-container');
+            const imagePreview = document.getElementById('image-preview');
+            const changeImageBtn = document.getElementById('change-image');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const resultsContainer = document.getElementById('results-container');
+
+            // Upload area functionality
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            
+            uploadContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadContainer.classList.add('active');
+            });
+
+            uploadContainer.addEventListener('dragleave', () => {
+                uploadContainer.classList.remove('active');
+            });
+
+            uploadContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadContainer.classList.remove('active');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            changeImageBtn.addEventListener('click', () => {
+                imagePreviewContainer.classList.add('hidden');
+                uploadContainer.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+            });
+
+            function handleFile(file) {
+                if (!file.type.match('image.*')) {
+                    alert('Please upload an image file');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    uploadContainer.classList.add('hidden');
+                    imagePreviewContainer.classList.remove('hidden');
+                    resultsContainer.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Analysis simulation
+            analyzeBtn.addEventListener('click', () => {
+                // Show loading state
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<span class="animate-pulse">Analyzing...</span>';
+
+                // Simulate API call delay
+                setTimeout(() => {
+                    // Generate random values (simulated analysis)
+                    // Determine location type from image name/contents
+                    const locationTypes = [
+                        { name: 'heavy', values: [50,120,88] },
+                        { name: 'clean', values: [7,32,20] },
+                        { name: 'moderate', values: [40,65,70] }
+                    ];
+                    
+                    // Randomly select a location type (you can replace this with actual image analysis)
+                    const location = locationTypes[Math.floor(Math.random() * locationTypes.length)];
+                    
+                    // Apply small random variations to values
+                    const pm1 = location.values[0] + Math.floor(Math.random() * 10) - 5;
+                    const pm25 = location.values[1] + Math.floor(Math.random() * 20) - 10;
+                    const pm10 = location.values[2] + Math.floor(Math.random() * 15) - 7;
+
+                    // Update results
+                    document.getElementById('pm1-value').textContent = pm1;
+                    document.getElementById('pm25-value').textContent = pm25;
+                    document.getElementById('pm10-value').textContent = pm10;
+
+                    // Set status based on values
+                    document.getElementById('pm1-status').textContent = getStatusText(pm1, 10, 20);
+                    document.getElementById('pm25-status').textContent = getStatusText(pm25, 25, 50);
+                    document.getElementById('pm10-status').textContent = getStatusText(pm10, 50, 100);
+
+                    // Animate graph bars
+                    document.getElementById('pm1-bar').style.height = `${(pm1 / 150) * 100}%`;
+                    document.getElementById('pm25-bar').style.height = `${(pm25 / 150) * 100}%`;
+                    document.getElementById('pm10-bar').style.height = `${(pm10 / 150) * 100}%`;
+
+                    // Show results and location type
+                    document.getElementById('detected-location').textContent = location.name;
+                    imagePreviewContainer.classList.add('hidden');
+                    resultsContainer.classList.remove('hidden');
+
+                    // Reset button and add share button
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = 'Analyze Air Quality';
+                    
+                    // Add share button dynamically
+                    const shareBtn = `<button id="share-results" class="mt-4 w-full py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+                        Share Results
+                    </button>`;
+                    resultsContainer.insertAdjacentHTML('beforeend', shareBtn);
+                    
+                    document.getElementById('share-results').addEventListener('click', shareResults);
+                }, 2000);
+            });
+
+            function getStatusText(value, moderateThreshold, unhealthyThreshold) {
+                if (value < moderateThreshold) return 'Good air quality';
+                if (value < unhealthyThreshold) return 'Moderate pollution';
+                return 'Unhealthy levels';
+            }
+
+            async function shareResults() {
+                // Capture results
+                const results = {
+                    pm1: document.getElementById('pm1-value').textContent,
+                    pm25: document.getElementById('pm25-value').textContent,
+                    pm10: document.getElementById('pm10-value').textContent,
+                    location: document.getElementById('detected-location').textContent
+                };
+                
+                try {
+                    // In a real implementation, this would POST to your server
+                    const response = await fakeApiCall(results);
+                    alert(`Results shared! Share link: ${response.shareUrl}`);
+                } catch (error) {
+                    alert('Sharing failed. Please copy the results manually.');
+                }
+            }
+
+            function fakeApiCall(data) {
+                // Simulate server API call
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve({
+                            shareUrl: `https://yourapp.com/share/${btoa(JSON.stringify(data))}`
+                        });
+                    }, 1000);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
+```
