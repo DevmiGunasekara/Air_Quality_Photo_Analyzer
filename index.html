@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,7 +69,7 @@
                 <div id="image-preview-container" class="hidden mb-6">
                     <div class="relative bg-gray-100 rounded-lg overflow-hidden">
                         <img id="image-preview" class="w-full max-h-96 object-contain" 
-                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels" src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/6160aed9-595a-48d2-a96e-4e4dbca84fc0.png">
+                            src="" alt="Uploaded environmental image that will be analyzed for particulate matter levels" src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e6d3637d-a865-4075-b018-e80cdfec17b2.png">
                         <div class="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 to-transparent">
                             <div class="flex justify-between items-center">
                                 <span class="text-white font-medium">Image Preview</span>
@@ -307,12 +308,19 @@
                     document.getElementById('detected-location').textContent = location.name;
                     imagePreviewContainer.classList.add('hidden');
                     resultsContainer.classList.remove('hidden');
+                    
+                    // Add share button dynamically
+                    const shareBtn = `<button id="share-results" class="mt-4 w-full py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-7>
+                        Share Results
+                    </button>`;
+                    resultsContainer.insertAdjacentHTML('beforeend', shareBtn);
+                    
+                    document.getElementById('share-results').addEventListener('click', shareResults);
 
                     } catch (error) {
                         console.error('Analysis error:', error);
                         alert('Analysis failed. Please try again.');
-                    } finally {
-                        // Reset button regardless of success/failure
+                        // Reset button on error
                         analyzeBtn.disabled = false;
                         analyzeBtn.textContent = 'Analyze Air Quality';
                     }
